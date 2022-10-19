@@ -473,11 +473,15 @@ HRESULT InitDevice()
     // Initialize the world matrix
 	g_World = XMMatrixIdentity();
 
+    //matrixlookatLH
+    XMMATRIX lookat = XMMatrixSet(0.0f, 1.0f, -5.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,0.0f,0.0f,0.0f,0.0f);
+
     // Initialize the view matrix
 	XMVECTOR Eye = XMVectorSet( 0.0f, 1.0f, -5.0f, 0.0f );
 	XMVECTOR At = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
 	XMVECTOR Up = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
-	g_View = XMMatrixLookAtLH( Eye, At, Up );
+    g_View = lookat;
+	//g_View = XMMatrixLookAtLH( Eye, At, Up );
 
     // Initialize the projection matrix
 	g_Projection = XMMatrixPerspectiveFovLH( XM_PIDIV2, width / (FLOAT)height, 0.01f, 100.0f );
