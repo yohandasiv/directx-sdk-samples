@@ -55,12 +55,18 @@ IDXGISwapChain*         g_pSwapChain = nullptr;
 IDXGISwapChain1*        g_pSwapChain1 = nullptr;
 ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
 ID3D11VertexShader*     g_pVertexShader = nullptr;
+ID3D11VertexShader*     g_pVertexShader2 = nullptr;
+ID3D11VertexShader*     g_pVertexShader3 = nullptr;
 ID3D11PixelShader*      g_pPixelShader = nullptr;
+ID3D11PixelShader*      g_pPixelShader2 = nullptr;
+ID3D11PixelShader*      g_pPixelShader3 = nullptr;
 ID3D11InputLayout*      g_pVertexLayout = nullptr;
 ID3D11Buffer*           g_pVertexBuffer = nullptr;
 ID3D11Buffer*           g_pIndexBuffer = nullptr;
 ID3D11Buffer*           g_pConstantBuffer = nullptr;
-XMMATRIX                g_World;
+XMMATRIX                g_World1;
+XMMATRIX                g_World2;
+XMMATRIX                g_World3;
 XMMATRIX                g_View;
 XMMATRIX                g_Projection;
 
@@ -346,7 +352,11 @@ HRESULT InitDevice()
 
     // Compile the vertex shader
     ID3DBlob* pVSBlob = nullptr;
-    hr = CompileShaderFromFile( L"Tutorial04.fxh", "VS_main", "vs_4_0", &pVSBlob );
+    ID3DBlob* pVSBlob2 = nullptr;
+    ID3DBlob* pVSBlob3 = nullptr;
+    hr = CompileShaderFromFile( L"Tutorial04.fxh", "VS", "vs_4_0", &pVSBlob );
+    hr = CompileShaderFromFile(L"Tutorial04.fxh", "VS2", "vs_4_0", &pVSBlob2);
+    hr = CompileShaderFromFile(L"Tutorial04.fxh", "VS3", "vs_4_0", &pVSBlob3);
     if( FAILED( hr ) )
     {
         MessageBox( nullptr,
@@ -356,6 +366,8 @@ HRESULT InitDevice()
 
 	// Create the vertex shader
 	hr = g_pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &g_pVertexShader );
+    hr = g_pd3dDevice->CreateVertexShader(pVSBlob2->GetBufferPointer(), pVSBlob2->GetBufferSize(), nullptr, &g_pVertexShader2);
+    hr = g_pd3dDevice->CreateVertexShader(pVSBlob3->GetBufferPointer(), pVSBlob3->GetBufferSize(), nullptr, &g_pVertexShader3);
 	if( FAILED( hr ) )
 	{	
 		pVSBlob->Release();
@@ -382,7 +394,11 @@ HRESULT InitDevice()
 
 	// Compile the pixel shader
 	ID3DBlob* pPSBlob = nullptr;
+    ID3DBlob* pPSBlob2 = nullptr;
+    ID3DBlob* pPSBlob3 = nullptr;
     hr = CompileShaderFromFile( L"Tutorial04.fxh", "PS", "ps_4_0", &pPSBlob );
+    hr = CompileShaderFromFile(L"Tutorial04.fxh", "PS2", "ps_4_0", &pPSBlob2);
+    hr = CompileShaderFromFile(L"Tutorial04.fxh", "PS3", "ps_4_0", &pPSBlob3);
     if( FAILED( hr ) )
     {
         MessageBox( nullptr,
@@ -392,6 +408,8 @@ HRESULT InitDevice()
 
 	// Create the pixel shader
 	hr = g_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pPixelShader );
+    hr = g_pd3dDevice->CreatePixelShader(pPSBlob2->GetBufferPointer(), pPSBlob2->GetBufferSize(), nullptr, &g_pPixelShader2);
+    hr = g_pd3dDevice->CreatePixelShader(pPSBlob3->GetBufferPointer(), pPSBlob3->GetBufferSize(), nullptr, &g_pPixelShader3);
 	pPSBlob->Release();
     if( FAILED( hr ) )
         return hr;
@@ -461,6 +479,19 @@ HRESULT InitDevice()
     // Set primitive topology
     g_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
+    ID3D11RasterizerState* m_rasterState = 0;
+    D3D11_RASTERIZER_DESC rasterDesc;
+    rasterDesc.CullMode = D3D11_CULL_NONE;
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.ScissorEnable = false;
+    rasterDesc.DepthBias = 0;
+    rasterDesc.DepthBiasClamp = 0.0f;
+    rasterDesc.DepthClipEnable = true;
+    rasterDesc.MultisampleEnable = false;
+    rasterDesc.SlopeScaledDepthBias = 0.0f;
+    hr = g_pd3dDevice->CreateRasterizerState(&rasterDesc, &m_rasterState);
+    g_pImmediateContext->RSSetState(m_rasterState);
+
 	// Create the constant buffer
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof(ConstantBuffer);
@@ -471,7 +502,9 @@ HRESULT InitDevice()
         return hr;
 
     // Initialize the world matrix
-	g_World = XMMatrixIdentity();
+	g_World1 = XMMatrixIdentity();
+    g_World2 = XMMatrixTranslation(3.0f, 1.0f, 1.0f);
+    g_World3 = XMMatrixTranslation(-3.0f, 1.0f, 1.0f);
 
     //matrixlookatLH
     //XMMATRIX lookat = XMMatrixSet(0.0f, 1.0f, -5.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,0.0f,0.0f,0.0f,0.0f);
@@ -502,7 +535,11 @@ void CleanupDevice()
     if( g_pIndexBuffer ) g_pIndexBuffer->Release();
     if( g_pVertexLayout ) g_pVertexLayout->Release();
     if( g_pVertexShader ) g_pVertexShader->Release();
+    if (g_pVertexShader) g_pVertexShader2->Release();
+    if (g_pVertexShader) g_pVertexShader3->Release();
     if( g_pPixelShader ) g_pPixelShader->Release();
+    if (g_pPixelShader) g_pPixelShader2->Release();
+    if (g_pPixelShader) g_pPixelShader3->Release();
     if( g_pRenderTargetView ) g_pRenderTargetView->Release();
     if( g_pSwapChain1 ) g_pSwapChain1->Release();
     if( g_pSwapChain ) g_pSwapChain->Release();
@@ -566,7 +603,8 @@ void Render()
     //
     // Animate the cube
     //
-	g_World = XMMatrixRotationY( t );
+	//g_World = XMMatrixRotationY( 0.5f );
+
 
     //
     // Clear the back buffer
@@ -576,11 +614,11 @@ void Render()
     //
     // Update variables
     //
-    ConstantBuffer cb;
-	cb.mWorld = XMMatrixTranspose( g_World );
-	cb.mView = XMMatrixTranspose( g_View );
-	cb.mProjection = XMMatrixTranspose( g_Projection );
-	g_pImmediateContext->UpdateSubresource( g_pConstantBuffer, 0, nullptr, &cb, 0, 0 );
+    ConstantBuffer cb1;
+	cb1.mWorld = XMMatrixTranspose( g_World1 );
+	cb1.mView = XMMatrixTranspose( g_View );
+	cb1.mProjection = XMMatrixTranspose( g_Projection );
+	g_pImmediateContext->UpdateSubresource( g_pConstantBuffer, 0, nullptr, &cb1, 0, 0 );
 
     //
     // Renders a triangle
@@ -589,6 +627,38 @@ void Render()
 	g_pImmediateContext->VSSetConstantBuffers( 0, 1, &g_pConstantBuffer );
 	g_pImmediateContext->PSSetShader( g_pPixelShader, nullptr, 0 );
 	g_pImmediateContext->DrawIndexed( 36, 0, 0 );        // 36 vertices needed for 12 triangles in a triangle list
+
+    // Update variables
+//
+    ConstantBuffer cb2;
+    cb2.mWorld = XMMatrixTranspose(g_World2);
+    cb2.mView = XMMatrixTranspose(g_View);
+    cb2.mProjection = XMMatrixTranspose(g_Projection);
+    g_pImmediateContext->UpdateSubresource(g_pConstantBuffer, 0, nullptr, &cb2, 0, 0);
+
+    //
+    // Renders a triangle
+    //
+    g_pImmediateContext->VSSetShader(g_pVertexShader2, nullptr, 0);
+    g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pConstantBuffer);
+    g_pImmediateContext->PSSetShader(g_pPixelShader2, nullptr, 0);
+    g_pImmediateContext->DrawIndexed(36, 0, 0);        // 36 vertices needed for 12 triangles in a triangle list
+
+    // Update variables
+//
+    ConstantBuffer cb3;
+    cb3.mWorld = XMMatrixTranspose(g_World3);
+    cb3.mView = XMMatrixTranspose(g_View);
+    cb3.mProjection = XMMatrixTranspose(g_Projection);
+    g_pImmediateContext->UpdateSubresource(g_pConstantBuffer, 0, nullptr, &cb3, 0, 0);
+
+    //
+    // Renders a triangle
+    //
+    g_pImmediateContext->VSSetShader(g_pVertexShader3, nullptr, 0);
+    g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pConstantBuffer);
+    g_pImmediateContext->PSSetShader(g_pPixelShader3, nullptr, 0);
+    g_pImmediateContext->DrawIndexed(36, 0, 0);        // 36 vertices needed for 12 triangles in a triangle list
 
     //
     // Present our back buffer to our front buffer
